@@ -105,6 +105,7 @@ describe('GET /todos/:id', () => {
 });
 
 describe('DELETE /todos/:id', () => {
+    
     it('should delete a todo', (done) => {
         request(app)
             .delete(`/todos/${todos[0]._id.toHexString()}`)
@@ -112,7 +113,13 @@ describe('DELETE /todos/:id', () => {
             .expect((res) => {
                 expect(res.body.todo.text).toBe(todos[0].text);
             })
-            .end(done);
+            .end((err, res) => {
+                if(err) return done(err);
+                Todo.findById(todos[0]._id).then((todo) => {
+                    expect(todo).toBe(null);
+                    done();
+                }).catch((e) => done(e));
+            });
     });
 
     it('should return 404 for todo not found', (done) => {
@@ -128,4 +135,5 @@ describe('DELETE /todos/:id', () => {
             .expect(404)
             .end(done);    
         });
+
 });
