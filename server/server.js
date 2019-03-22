@@ -18,6 +18,7 @@ const {ObjectID} = require('mongodb');
 var {mongoose} = require('./db/mongoose');
 var {Todo} = require('./models/todo');
 var {User} = require('./models/user');
+var {authenticate} = require('./middleware/authenticate');
 
 var app = express();
 const port = process.env.PORT;
@@ -48,7 +49,8 @@ app.get('/todos/:id', (req, res) => {
     var id = req.params.id;
     if (!ObjectID.isValid(id)) return res.status(404).send();    
     Todo.findById(req.params.id).then((todo) => {
-        if(!todo) return res.status(404).send();
+        if(!todo) 
+            return res.status(404).send();
         return res.send({todo});
     }, (e) => {
         res.status(400).send();
@@ -98,6 +100,10 @@ app.post('/users', (req, res) => {
     }).catch((e) => {
         res.status(400).send(e);
     });
+});
+
+app.post('/users/me', (req, res) => {
+    res.send(req.user);
 });
 
 app.listen(port, () => {
