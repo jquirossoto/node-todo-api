@@ -2,32 +2,17 @@ const expect = require('expect');
 const request = require('supertest');
 const {ObjectID} = require('mongodb');
 
-
 const {app} = require('./../server');
 const {Todo} = require('./../models/todo');
+const {User} = require('./../models/user');
+const {todos, populateTodos, users, populateUsers} = require('./seed/seed');
 
-const todos = [{
-    _id: new ObjectID(),
-    text: "first test todo"
-},{
-    _id: new ObjectID(),
-    text: "second test todo",
-    completed: true,
-    completedAt: 333
-}];
-
-beforeEach((done) => {
-    Todo.deleteMany({}).then(() => {
-        return Todo.insertMany(todos);
-    }).then(() => done());
-    
-});
+beforeEach(populateTodos);
+beforeEach(populateUsers);
 
 describe('POST /todos', () => {
     it('should create a new todo', (done) => {
-
         var text = 'Test todo text';
-
         request(app)
             .post('/todos')
             .send({text})
@@ -37,7 +22,6 @@ describe('POST /todos', () => {
             })
             .end((err, res) => {
                 if (err) return done(err);
-
                 Todo.find({text}).then((todos) => {
                     expect(todos.length).toBe(1);
                     expect(todos[0].text).toBe(text);
@@ -53,7 +37,6 @@ describe('POST /todos', () => {
             .expect(400)
             .end((err, res) => {
                 if (err) return done(err);
-
                 Todo.find().then((todos) => {
                     expect(todos.length).toBe(2);
                     done();
@@ -140,44 +123,77 @@ describe('DELETE /todos/:id', () => {
 
 });
 
-describe('PATCH /todos/:id', () => {
-    
-    it('should update the todo', (done) => {
+// describe('PATCH /todos/:id', () => {    
 
-        var id = todos[0]._id;
-        var body = {
-            text: 'testtext',
-            completed: true
-        };
+    // it('should update the todo', (done) => {
+    //     var id = todos[0]._id;
+    //     var body = {
+    //         text: 'testtext',
+    //         completed: true
+    //     };
+    //     request(app)
+    //         .patch(`/todos/${id.toHexString()}`)
+    //         .send(body)
+    //         .expect(200)
+    //         .expect((res) => {
+    //             expect(res.body.text).toBe(body.text);
+    //             expect(res.body.completed).toBe(true);
+    //             expect(res.body.completedAt).toBeA(Number);
+    //         })
+    //         .end(done);
+    // });
+
+//     it('should clear completedAt when todo is not completed', (done) => {
+//         var id = todos[1]._id;
+//         var body = {
+//             text: 'testtext2',
+//             completed: false
+//         };
+//         request(app)
+//             .patch(`/todos/${id.toHexString()}`)
+//             .send(body)
+//             .expect(200)
+//             .expect((res) => {
+//                 expect(res.body.text).toBeA(String).toBe(body.text);
+//                 expect(res.body.completed).toBeA(Boolean).toBe(false);
+//                 expect(res.body.completedAt).toBe(null);
+//             })
+//             .end(done);
+//     });
+
+// });
+
+describe('GET /users/me', () => {
+    it('should return user if authenticated', (done) => {
         request(app)
-            .patch(`/todos/${id.toHexString()}`)
-            .send(body)
+            .get('/users/me')
+            .set('x-auth', users[0].tokens[0].token)
             .expect(200)
             .expect((res) => {
-                expect(res.body.text).toBe(body.text);
-                expect(res.body.completed).toBe(true);
-                expect(res.body.completedAt).toBeA(Number);
+                expect(res.body._id).toBe(users[0]._id.toHexString());
+                expect(res.body.email).toBe(users[0].email);
             })
             .end(done);
     });
 
-    it('should clear completedAt when todo is not completed', (done) => {
-        var id = todos[1]._id;
-        var body = {
-            text: 'testtext2',
-            completed: false
-        };
-        request(app)
-            .patch(`/todos/${id.toHexString()}`)
-            .send(body)
-            .expect(200)
-            .expect((res) => {
-                expect(res.body.text).toBeA(String).toBe(body.text);
-                expect(res.body.completed).toBeA(Boolean).toBe(false);
-                expect(res.body.completedAt).toBe(null);
-            })
-            .end(done);
+    // it('should return 401 if not authenticated', (done) => {
 
+    // });
 
-    });
+    // describe('DELETE /users/me/token', () => {
+    //     it('should delete authentication token', (done) => {
+    //         request(app)
+    //             .delete('/users/me/token')
+    //             .set('x-auth', users[0].tokens[0].token)
+    //             .expect(200)
+    //             .end((err, res) => {
+    //                 if(err) return done(err);
+    //                 User.findById(users[0]._id).then((user) => {
+    //                     expect(user.tokens.length).toBe(0);
+    //                     done();
+    //                 }).catch((e) => done(e));
+    //             });
+    //     });
+    // });
+
 });
